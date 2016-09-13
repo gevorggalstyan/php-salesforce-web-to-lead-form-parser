@@ -34,35 +34,40 @@ class Parser
 
     public static function parse($html_file)
     {
+        if (!is_file($html_file) || !is_readable($html_file)) {
+            throw new \Exception($html_file . ' is not a readable file');
+        }
         $html = new \simple_html_dom();
         $html->load_file('web-to-lead-full.html');
-        $forms = $html->find('form');
-        $form_method = 'POST';
-        foreach ($forms as $form) {
-            if (!isset($form_action) &&
-                isset($form->action) &&
-                isset($form->method) &&
-                $form->method === $form_method
-            ) {
-                $form_action = $form->action;
-            }
+        $forms = $html->find('form[method=POST]');
+        if (sizeof($forms) == 0) {
+            throw new \Exception($html_file . ' must contain a form with POST method');
         }
-        if (!isset($form_action)) {
-            throw new \Exception('Form action URL not found');
+        if (sizeof($forms) > 1) {
+            throw new \Exception($html_file . ' must contain only one form');
         }
-        $nodes = $html->find('input, select, textarea');
+        $form = $forms[0];
+
+        if (!isset($form->action)) {
+            throw new \Exception($html_file . ' must contain form with non-empty action attribute');
+        }
+
         $data_structure = [];
+        $data_structure[] = ['action' => $form->action, 'fields' => []];
+
+        $nodes = $html->find('input, select, textarea');
+
         foreach ($nodes as $index => $node) {
             if ($node->type != 'hidden' && $node->type != 'submit') {
-                $data_structure[$node->name] = [
+                $data_structure['fields'][$node->name] = [
                     'tag' => $node->tag
                 ];
                 switch ($node->tag) {
                     case 'input':
-                        $data_structure[$node->name]['label'] = self::get_label($html, $nodes, $index, $node);
+                        $data_structure['fields'][$node->name]['label'] = self::get_label($html, $nodes, $index, $node);
                         break;
                     case 'select':
-                        $data_structure[$node->name]['label'] = self::get_label($html, $nodes, $index, $node);
+                        $data_structure['fields'][$node->name]['label'] = self::get_label($html, $nodes, $index, $node);
                         $options = $node->find('option');
                         $options_array = [];
                         foreach ($options as $option) {
@@ -70,10 +75,10 @@ class Parser
                                 'value' => $option->value,
                                 'text' => $option->innertext];
                         }
-                        $data_structure[$node->name]['options'] = [$options_array];
+                        $data_structure['fields'][$node->name]['options'] = [$options_array];
                         break;
                     case 'textarea':
-                        $data_structure[$node->name]['label'] = self::get_label($html, $nodes, $index, $node);
+                        $data_structure['fields'][$node->name]['label'] = self::get_label($html, $nodes, $index, $node);
                         break;
                     default:
                         // This cannot happen
