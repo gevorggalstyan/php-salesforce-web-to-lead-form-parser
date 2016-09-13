@@ -63,6 +63,9 @@ class Parser
                 $data_structure['fields'][$node->name] = [
                     'tag' => $node->tag
                 ];
+                $data_structure['fields'][$node->name] = [
+                    'multiple' => $node->multiple == 'multiple'
+                ];
                 switch ($node->tag) {
                     case 'input':
                         $data_structure['fields'][$node->name]['label'] = self::get_label($html, $nodes, $index, $node);
