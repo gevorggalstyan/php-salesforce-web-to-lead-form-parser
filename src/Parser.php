@@ -53,19 +53,11 @@ class Parser
             throw new \Exception($html_file . ' must contain form with non-empty action attribute');
         }
 
-        $oid = $form->find('input[name=oid]');
-
-        if (!isset($oid) || $oid == '' || !isset($oid->value) || $oid->value == '') {
-            throw new \Exception($html_file . ' must contain oid field');
-        }
-
         $data_structure = [];
         $data_structure['action'] = $form->action;
-        $data_structure['oid'] = $oid->value;
         $data_structure['fields'] = [];
 
         $nodes = $html->find('input, select, textarea');
-
 
         foreach ($nodes as $index => $node) {
             if ($node->type != 'hidden' && $node->type != 'submit') {
@@ -94,7 +86,13 @@ class Parser
                     default:
                         // This cannot happen
                 }
+            } elseif ($node->name == 'oid') {
+                $data_structure['oid'] = $node->value;
             }
+        }
+
+        if (!isset($data_structure['oid']) || $data_structure['oid'] == '') {
+            throw new \Exception($html_file . ' must contain oid field');
         }
         return $data_structure;
     }
