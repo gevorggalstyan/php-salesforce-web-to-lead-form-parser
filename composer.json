@@ -1,0 +1,22 @@
+{
+  "name": "gevorggalstyan/sf-web2lead-parser",
+  "description": "PHP Composer Package of Salesforce.com Web-To-Lead Form Parser",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Gevorg A. Galstyan",
+      "email": "gevorg.galstyan@gmail.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "php": "^5.3.3 || ^7.0",
+    "shark/simple_html_dom": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "GevorgGalstyan\\SFW2LParser\\": "src"
+    }
+  }
+}
