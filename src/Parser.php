@@ -9,7 +9,7 @@ class Parser
 
     }
 
-    private function get_label($html, $nodes, $index, $node)
+    public static function get_label($html, $nodes, $index, $node)
     {
         $label = $html->find('label[for=' . $node->name . ']');
         if (isset($label) && sizeof($label) > 0) {
