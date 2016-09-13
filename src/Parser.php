@@ -46,17 +46,26 @@ class Parser
         if (sizeof($forms) > 1) {
             throw new \Exception($html_file . ' must contain only one form');
         }
+
         $form = $forms[0];
 
         if (!isset($form->action)) {
             throw new \Exception($html_file . ' must contain form with non-empty action attribute');
         }
 
+        $oid = $form->find('input[name=oid]');
+
+        if (!isset($oid) || $oid == '' || !isset($oid->value) || $oid->value == '') {
+            throw new \Exception($html_file . ' must contain oid field');
+        }
+
         $data_structure = [];
         $data_structure['action'] = $form->action;
+        $data_structure['oid'] = $oid->value;
         $data_structure['fields'] = [];
 
         $nodes = $html->find('input, select, textarea');
+
 
         foreach ($nodes as $index => $node) {
             if ($node->type != 'hidden' && $node->type != 'submit') {
