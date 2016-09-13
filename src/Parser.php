@@ -2,8 +2,6 @@
 
 namespace GevorgGalstyan\SFW2LParser;
 
-//require_once '../vendor/autoload.php';
-
 class Parser
 {
     public function __construct()
