@@ -53,7 +53,8 @@ class Parser
         }
 
         $data_structure = [];
-        $data_structure[] = ['action' => $form->action, 'fields' => []];
+        $data_structure['action'] = $form->action;
+        $data_structure['fields'] = [];
 
         $nodes = $html->find('input, select, textarea');
 
