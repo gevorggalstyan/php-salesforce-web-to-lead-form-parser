@@ -18,5 +18,8 @@
     "psr-4": {
       "GevorgGalstyan\\SFW2LParser\\": "src"
     }
+  },
+  "suggest": {
+    "gevorggalstyan/sf-web2lead-submitter": "Allows to submit data to Salesforce"
   }
 }
