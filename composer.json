@@ -11,8 +11,7 @@
   ],
   "minimum-stability": "dev",
   "require": {
-    "php": "^5.3.3 || ^7.0",
-    "shark/simple_html_dom": "*"
+    "php": "^5.3.3 || ^7.0"
   },
   "autoload": {
     "psr-4": {

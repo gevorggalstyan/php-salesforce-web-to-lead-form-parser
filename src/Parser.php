@@ -9,26 +9,21 @@ class Parser
 
     }
 
-    public static function get_label($html, $nodes, $index, $node)
+    public static function get_label($dom, $nodes, $index, $node)
     {
-        $label = $html->find('label[for=' . $node->name . ']');
-        if (isset($label) && sizeof($label) > 0) {
-            return $label[0]->innertext;
-        } else {
-            $label = $node->title;
-            if (!$label) {
-                if ($index > 1) {
-                    $ppos = strpos($html->innertext,
-                            $nodes[$index - 1]->outertext) +
-                        strlen($nodes[$index - 1]->outertext);
-                    $len = strpos($html->innertext,
-                            $nodes[$index]->outertext) - $ppos;
-                    return trim(preg_replace('/:|\s\s+/', ' ',
-                        str_get_html(substr($html->innertext,
-                            $ppos, $len))->plaintext));
-                }
+        $labels = $dom->getElementsByTagName('label');
+        foreach ($labels as $label) {
+            if ($label->getAttribute('for') === $node->getAttribute('name')) {
+                return $label->nodeValue;
             } else {
-                return $label;
+                $lbl = $node->getAttribute('title');
+                if ($lbl === '') {
+                    if ($index > 1) {
+                        return trim($nodes[$index - 1]->nodeValue);
+                    }
+                } else {
+                    return $lbl;
+                }
             }
         }
         return NULL;
@@ -37,73 +32,71 @@ class Parser
     public static function parse($html_file)
     {
         if (!is_file($html_file) || !is_readable($html_file)) {
-            throw new \Exception($html_file . ' is not a readable file');
+            throw new \RuntimeException($html_file . ' is not a readable file');
         }
-        $html = new \simple_html_dom();
-        $html->load_file($html_file);
-        $forms = $html->find('form[method=POST]');
-        if (sizeof($forms) == 0) {
-            throw new \Exception($html_file .
+
+        $dom = new \DOMDocument();
+        $dom->loadHTMLFile($html_file);
+        $forms = $dom->getElementsByTagName('form');
+
+        if (count($forms) === 0) {
+            throw new \RuntimeException($html_file .
                 ' must contain a form with POST method');
         }
-        if (sizeof($forms) > 1) {
-            throw new \Exception($html_file .
+        if (count($forms) > 1) {
+            throw new \RuntimeException($html_file .
                 ' must contain only one form');
         }
 
         $form = $forms[0];
 
-        if (!isset($form->action)) {
-            throw new \Exception($html_file .
+        if ($form->getAttribute('action') === '') {
+            throw new \RuntimeException($html_file .
                 ' must contain form with non-empty action attribute');
         }
 
         $data_structure = [];
-        $data_structure['action'] = $form->action;
+        $data_structure['action'] = $form->getAttribute('action');
         $data_structure['fields'] = [];
 
-        $nodes = $html->find('input, select, textarea');
-
+        $nodes = $form->childNodes;
+        $formElements = ['input', 'select', 'textarea'];
         foreach ($nodes as $index => $node) {
-            if ($node->type != 'hidden' && $node->type != 'submit') {
-                $data_structure['fields'][$node->name] = [
-                    'tag' => $node->tag
-                ];
-                switch ($node->tag) {
-                    case 'input':
-                        $data_structure['fields'][$node->name]['label'] =
-                            self::get_label($html, $nodes, $index, $node);
-                        break;
-                    case 'select':
-                        $data_structure['fields'][$node->name]['label'] =
-                            self::get_label($html, $nodes, $index, $node);
-                        $data_structure['fields'][$node->name]['multiple'] =
-                            ($node->multiple == 'multiple');
-                        $options = $node->find('option');
+            if (in_array($node->nodeName, $formElements, TRUE)) {
+                $nodeType = $node->getAttribute('type');
+                if ($nodeType !== 'hidden' && $nodeType !== 'submit') {
+                    $data_structure['fields'][$node->getAttribute('name')] = [
+                        'tag' => $node->nodeName
+                    ];
+                    $data_structure['fields'][$node->getAttribute('name')]['label'] =
+                        self::get_label($dom, $nodes, $index, $node);
+
+                    if ($node->nodeName === 'select') {
+                        $data_structure['fields'][$node->getAttribute('name')]['multiple'] =
+                            ($node->getAttribute('multiple') === 'multiple');
                         $options_array = [];
+                        $options = $node->childNodes;
                         foreach ($options as $option) {
-                            $options_array[] = [
-                                'value' => $option->value,
-                                'text' => $option->innertext];
+                            if ($option->nodeName === 'option') {
+                                $options_array[] = [
+                                    'value' => $option->getAttribute('value'),
+                                    'text' => $option->nodeValue
+                                ];
+                            }
                         }
-                        $data_structure['fields'][$node->name]['options'] =
+                        $data_structure['fields'][$node->getAttribute('name')]['options'] =
                             [$options_array];
-                        break;
-                    case 'textarea':
-                        $data_structure['fields'][$node->name]['label'] =
-                            self::get_label($html, $nodes, $index, $node);
-                        break;
-                    default:
-                        // This cannot happen
+                    }
+                } elseif ($node->getAttribute('name') === 'oid') {
+                    $data_structure['oid'] = $node->getAttribute('value');
                 }
-            } elseif ($node->name == 'oid') {
-                $data_structure['oid'] = $node->value;
             }
         }
 
         if (!isset($data_structure['oid']) || $data_structure['oid'] == '') {
-            throw new \Exception($html_file . ' must contain oid field');
+            throw new \RuntimeException($html_file . ' must contain oid field');
         }
+
         return $data_structure;
     }
 }
