@@ -19,7 +19,7 @@ class Parser
                 $lbl = $node->getAttribute('title');
                 if ($lbl === '') {
                     if ($index > 1) {
-                        return trim($nodes[$index - 1]->nodeValue);
+                        return trim($nodes->item($index - 1)->nodeValue);
                     }
                 } else {
                     return $lbl;
@@ -48,7 +48,7 @@ class Parser
                 ' must contain only one form');
         }
 
-        $form = $forms[0];
+        $form = $forms->item(0);
 
         if ($form->getAttribute('action') === '') {
             throw new \RuntimeException($html_file .
